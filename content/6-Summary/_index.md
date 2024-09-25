@@ -1,9 +1,9 @@
 ---
 title : "Summary"
 date :  "`r Sys.Date()`" 
-weight : 5
+weight : 6
 chapter : false
-pre : " <b> 5. </b> "
+pre : " <b> 6. </b> "
 ---
 
 In summary, this workshop project contains 2 parts:

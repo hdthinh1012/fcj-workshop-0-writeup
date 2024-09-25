@@ -8,15 +8,27 @@ pre : " <b> 1.1 </b> "
 ## HTTP Live Streaming
 A protocol of adaptive streaming proposed by Apple, providing ability to stream videos with different bitrate, automatically or manually chosen by the client.
 
+HLS breaks down videos into smaller chunks and delivers them using HTTP protocol. The client devices implemented to comply to HLS protocol downloads the video chunk and serve to users. HLS protocol also provided options to generate and deliver chunk into different video encodings, bitrate, resolution, audio quality.  
+
 ## AWS Elasic Compute Service (EC2)
-General purpose virtual private server
+A High-level general purpose virtual private server provided by AWS, providing multiple features such as:
+- Amazon Machine Images (AMIs):  
+Provide multiple image packages for variety of Operating System, developement environment, package components.
+- Instance types:  
+Multiple configurations of CPU cores, memory, disk size, network capacity and hardware graphic acclerations
+- Amazon EBS volumes:  
+Persistent storage volumes
+- Instance store volumes:   
+Storage volumes for temporary data that is deleted when you stop, hibernate, or terminate your instance.
+- Key pairs:  
+Secure login information for your instances. AWS stores the public key and you store the private key in a secure place.
 
 ## AWS VPC Security Group
-Act as virtual firewall, setting allow/deny rules for inbound/outbound connection based on protocol, port, desitnation, source, etc.
+Act as virtual firewall, setting allow/deny rules for inbound/outbound connection based on protocol, port, destination IP ranges, source IP ranges, etc.
 
 ## AWS Simple Storage Service (S3)
-Cloud file system provided by AWS for general purpose file storage.
-AWS S3 file system is implement as flat system, meaning all the files stored in the same level, but is abstract as folder-like structure for easy management.
+A cloud file storage system provided by AWS for general purpose file storage.  
+AWS S3 is implemented as flat file system, meaning all the files stored in the same level, but is abstract as folder-like structure for easier view and management.  
 For example, a bucket display as below in the AWS S3 management console:
     
 ```
@@ -35,12 +47,15 @@ Is stored physically as:
 - uploads/videos/sintel_trailer.mp4
 ```
 
-## NodeJS: stream:Writable, stream:Readable, Multer custom engine
+## NodeJS
+Stream is a method of handling data method that worked best for large file size transmission. Instead of reading or writing all data at once, NodeJS stream read or write data in a chunk-by-chunk manner, and into its own implemented custom buffer. NodeJS stream must release memory from it buffer by pushing the data it has read / sending the data it read to final destination when its buffer reach full capacity (determined by `highWaterMark` properties of a NodeJS stream instance) before continuing reading or writing data.
+
+### stream:Writable, stream:Readable, Multer custom engine
 The application ultilizes stream:Writable, stream:Readable from "node:stream" library to implement custom read and write stream to S3 buckets by using AWS v3 SDK. Besides, a Multer custom engine is also implemented to directly upload file to AWS S3 from client without writing to server disk, saving uploading times.
 
 You can learn more about implement custom stream in this brilliant guide [Node.js: How to implement own streams?](https://medium.com/@vaibhavmoradiya/how-to-implement-own-streams-in-node-js-edd9ab54a59b) and implement custom multer engine in [Make your own Storage Engine for Multer in TypeScript](https://javascript.plainenglish.io/custom-storage-engine-for-multer-in-typescript-613ebd35d61e)
 
-### stream.Writable
+#### stream.Writable
 To implement a custom write stream, we extends `Writable` class from `node:stream` library. The important method to override are:
 - `construct(opt: {}): void`: constructor for passing configuration argument for the stream
 - `_construct():void`: called right after the constructor to intialize the data, like opening local file or setting AWS sdk command
@@ -135,7 +150,7 @@ stream.on("finish", () => {
   console.log("stream was finished");
 });
 ```
-### stream.Readable
+#### stream.Readable
 To implement a custom read stream, we extends `Readable` class from `node:stream` library. The important method to override are:
 - `construct(opt: {}): void`: constructor for passing configuration argument for the stream
 - `_construct():void`: called right after the constructor to intialize the data, like opening local file or setting AWS sdk command
@@ -191,7 +206,7 @@ stream.on("end", () => {
 });
 ```
 
-### Multer custom engine
+#### Multer custom engine
 `multer` is a popular library package used for parsing multipart POST request, especially for file uploading. `multer` provided a `multer.diskStorage()` for easy file upload parsing and temporarily storing before processing in request handler.
 
 To implement Multer custom engine for uploading file to AWS S3 Bucket, we will extend `multer.StorageEngine` class in `multer` package. The important method to override are:

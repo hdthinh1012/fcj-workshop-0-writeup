@@ -1,14 +1,14 @@
 ---
-title : "Code step-by-step explanation"
+title : "Overall explanation"
 date :  "`r Sys.Date()`" 
-weight : 3
+weight : 1
 chapter : false
-pre : " <b> 3.3 </b> "
+pre : " <b> 4.1 </b> "
 ---
 
 ## Video upload to video stream flow chart
 ![flow-diagram](/images/3-Project-source-code/3.3-code-explanation/flow-diagram.png)
-The uploading and streaming video revolve around 3 abstract directory: `upload/chunks` for uploading video split chunks, `upload/videos` stored the uploaded file after chunk merge, `streams/` folder contains HLS master playlist generated from FFMPEG.
+The uploading and streaming video process revolves around 3 abstract directory: `upload/chunks` for uploading video split chunks, `upload/videos` stored the uploaded file after chunk merge, and `streams/` contains HLS master playlist generated from FFMPEG.
 The upload to stream flow contains following steps:
 - Front-end divides videos into chunks (chunk size are determined by server).
 - Sending each chunk to server, server saved chunk into `upload/chunks` folder of the S3 bucket.
@@ -18,7 +18,7 @@ The upload to stream flow contains following steps:
 
 ## Some notable class
 ### File system path
-The project was developed for local file system usage first, then migrate into AWS S3 bucket. Hence, some class implementation is necessary for smooth transition between local file system and AWS S3 Bucket.
+The project was developed for local file system usage first, then migrate into AWS S3 bucket. Hence, some boilerplate class implementation is necessary for smooth transition between local file system and AWS S3 Bucket.
 The file system path class responsible for generate file path whether it is relative or absolute.
 ![file-system-path](/images/3-Project-source-code/3.3-code-explanation/file-system-path.png)
 ### File system action
@@ -46,3 +46,18 @@ To easily switch back and forth between using local file system and AWS S3 bucke
 Sidenote: The solution of using s3fs-fuse mounted storage was founded after I implement these custom stream. The stream classes work as expected so I keep them. For the later step of using FFMPEG to generate HLS playlist, I happily ultilized s3fs for an easier transition to AWS S3.
 {{% /notice %}}
 ![stream](/images/3-Project-source-code/3.3-code-explanation/stream.png)
+
+## API Routes
+```
+/api/video
+    /stream
+        /get-all: List all video avalable for streaming
+    /upload
+        /: api for uploading each chunk
+        /clean-all: clear all uploaded file in the server
+    /process
+        /get-all: Get detail info of all videos (bitrate, encodings, resolution, etc.)
+
+/static/hls: serving `.m3u8` file for HLS streaming
+/static: serving raw uploaded video
+```
