@@ -1,21 +1,22 @@
+relativeURLs = true
 # Change the default theme to be use when building the site with Hugo
 theme = "hugo-theme-learn"
 
 # For search functionality
 [outputs]
-home = [ "HTML", "RSS", "JSON"]
+home = ["HTML", "RSS", "JSON"]
 
 [params]
-  # Change default color scheme with a variant one. Can be "red", "blue", "green".
-  themeVariant = "workshop"
-  # Git hub repo link
-  editURL = ""
-  description = ""
-  author = "journeyoftheaverageguy@gmail.com"
-  showVisitedLinks = true
-  disableBreadcrumb = false
-  disableNextPrev = false
-  
+# Change default color scheme with a variant one. Can be "red", "blue", "green".
+themeVariant = "workshop"
+# Git hub repo link
+editURL = ""
+description = ""
+author = "hdthinh01@gmail.com"
+showVisitedLinks = true
+disableBreadcrumb = false
+disableNextPrev = false
+
 [Languages]
 [Languages.en]
 title = "AWS System Manager"
@@ -38,4 +39,3 @@ name = "<i class='fab fa-facebook'></i> AWS Study Group"
 identifier = "AWS Study Group FB"
 url = "https://www.facebook.com/groups/awsstudygroupfcj/"
 weight = 20
-
