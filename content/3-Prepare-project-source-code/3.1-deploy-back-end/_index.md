@@ -12,12 +12,12 @@ Then cd into the project folder and create environment file `.env` and add the f
 
 ```txt
 PORT=8080
-SERVER_URL=http://<your-ec2-public-ip>:8080 // For static file serve
+SERVER_URL=http://<your-ec2-public-ip>:8080 // [Delete this comment before start server] For static file serve
 AWS_ACCESS_KEY_ID=<your_iam_access_key_id>
 AWS_SECRET_ACCESS_KEY=<your_iam_secret_access_key>
 BUCKET_NAME=<your-bucket-name>
 
-IS_AWS_S3=1 // or 0 for local file system
+IS_AWS_S3=1 // [Delete this comment before start server] or 0 for local file system
 AWS_S3_BUCKET_PATH=<your-mounted-s3fs-location>
 ```
 
