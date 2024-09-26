@@ -1,5 +1,5 @@
 ---
-title : "Introduction"
+title : "Introduction: Building HLS Video Streaming Web Application with AWS S3, EC2"
 date :  "`r Sys.Date()`" 
 weight : 1 
 chapter : false

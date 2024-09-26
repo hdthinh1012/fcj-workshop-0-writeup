@@ -19,7 +19,7 @@ disableNextPrev = false
 
 [Languages]
 [Languages.en]
-title = "AWS System Manager"
+title = "Building HLS Video Streaming Web Application with AWS S3, EC2"
 weight = 1
 languageName = "English"
 
