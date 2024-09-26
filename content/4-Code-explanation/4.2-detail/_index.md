@@ -271,12 +271,10 @@ export class AWSS3FileReadStream extends Readable {
             Body.transformToByteArray()
                 .then((chunk) => {
                     this.chunksConcat(chunk);
-                    if (this.chunks.byteLength >= this.highWaterMark) {
-                        let uploadingChunk = this.chunks;
-                        this.chunks = new Uint8Array(0);
-                        console.log('read stream push chunk', uploadingChunk);
-                        this.push(uploadingChunk);
-                    }
+                    let uploadingChunk = this.chunks;
+                    this.chunks = new Uint8Array(0);
+                    console.log('read stream push chunk', uploadingChunk);
+                    this.push(uploadingChunk);
                 })
                 .catch((error) => {
                     console.log('Body.transformToByteArray() error', error);
