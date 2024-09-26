@@ -8,6 +8,44 @@ pre : " <b> 4.2 </b> "
 
 This subsections presents implementation detail of NodeJS read/write streams and Multer custom engine working with AWS S3 SDK.
 
+## S3Client configuration
+```js
+import { S3Client } from '@aws-sdk/client-s3';
+import dotenv from 'dotenv';
+dotenv.config();
+import { NodeHttpHandler } from "@smithy/node-http-handler";
+import https from "https";
+
+let jsonSecret = {
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    BUCKET_NAME: process.env.BUCKET_NAME,
+};
+
+let s3 = new S3Client({
+    credentials: {
+        accessKeyId: jsonSecret.AWS_ACCESS_KEY_ID,
+        secretAccessKey: jsonSecret.AWS_SECRET_ACCESS_KEY,
+    },
+    region: "us-east-1",
+    // Use a custom request handler so that we can adjust the HTTPS Agent and
+    // socket behavior.
+    requestHandler: new NodeHttpHandler({
+        httpsAgent: new https.Agent({
+            maxSockets: 500,
+
+            // keepAlive is a default from AWS SDK. We want to preserve this for
+            // performance reasons.
+            keepAlive: true,
+            keepAliveMsecs: 1000,
+        }),
+        socketTimeout: 900000,
+    }),
+});
+
+export { s3, jsonSecret };
+```
+
 ## Class AWSS3FileWriteStream
 Implement a write stream to a AWS S3 Bucket file path with 3 steps of operation:
 - Initial a Multipart upload in `_constructor` method using `CreateMultipartUploadCommand` class.
