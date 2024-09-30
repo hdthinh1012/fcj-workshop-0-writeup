@@ -13,4 +13,5 @@ The project allows storing on local file storage or on AWS S3 Bucket.
 
 ### Content
   - [Related concepts](1.1-concepts/)
-  - [Table of contents](1.2-table-of-contents/)
+  - [Architecture](1.2-architecture/)
+  - [Table of contents](1.3-table-of-contents/)

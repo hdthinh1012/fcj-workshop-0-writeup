@@ -1,9 +1,9 @@
 ---
 title : "Table of contents"
 date :  "`r Sys.Date()`" 
-weight : 2
+weight : 3
 chapter : false
-pre : " <b> 1.2 </b> "
+pre : " <b> 1.3 </b> "
 ---
 
 

@@ -6,7 +6,24 @@ chapter : false
 pre : " <b> 4.1 </b> "
 ---
 
+## API Routes
+```
+/api/video
+    /stream
+        /get-all: List all video avalable for streaming
+    /upload
+        /set-up: initialize the uploading process for the next api
+        /: api for uploading each chunk
+        /clean-all: clear all uploaded file in the server
+    /process
+        /get-all: Get detail info of all videos (bitrate, encodings, resolution, etc.)
+
+/static/hls: serving `.m3u8` file for HLS streaming
+/static: serving raw uploaded video
+```
+
 ## Video upload to video stream flow chart
+The flowchart belows demonstrates steps from when the client uploading file chunk with request `POST /api/video/upload` to final HLS master playlist generation with FFMPEG command. 
 ![flow-diagram](/images/3-Project-source-code/3.3-code-explanation/flow-diagram.png)
 The uploading and streaming video process revolves around 3 abstract directory: `upload/chunks` for uploading video split chunks, `upload/videos` stored the uploaded file after chunk merge, and `streams/` contains HLS master playlist generated from FFMPEG.
 The upload to stream flow contains following steps:
@@ -46,18 +63,3 @@ To easily switch back and forth between using local file system and AWS S3 bucke
 Sidenote: The solution of using s3fs-fuse mounted storage was founded after I implement these custom stream. The stream classes work as expected so I keep them. For the later step of using FFMPEG to generate HLS playlist, I happily ultilized s3fs for an easier transition to AWS S3.
 {{% /notice %}}
 ![stream](/images/3-Project-source-code/3.3-code-explanation/stream.png)
-
-## API Routes
-```
-/api/video
-    /stream
-        /get-all: List all video avalable for streaming
-    /upload
-        /: api for uploading each chunk
-        /clean-all: clear all uploaded file in the server
-    /process
-        /get-all: Get detail info of all videos (bitrate, encodings, resolution, etc.)
-
-/static/hls: serving `.m3u8` file for HLS streaming
-/static: serving raw uploaded video
-```
