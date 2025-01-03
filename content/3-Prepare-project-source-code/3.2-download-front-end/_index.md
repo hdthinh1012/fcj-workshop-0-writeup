@@ -26,12 +26,7 @@ Click `Choose File` button and upload your video (Recommend an MP4 file format w
 ![demo-2](/images/3-Project-source-code/3.2-download-front-end/demo-2.png)
 Then click `Upload Video` button, the front end will send a initial request for the server to setup uploading process. If the setup succeed, an alert appears showing the file chunk size and number of chunks will be split from file to upload to server. Click `OK` to start the uploading process
 ![demo-3](/images/3-Project-source-code/3.2-download-front-end/demo-3.png)
-The server showing uploading message
-![demo-4](/images/3-Project-source-code/3.2-download-front-end/demo-4.png)
-![demo-5](/images/3-Project-source-code/3.2-download-front-end/demo-5.png)
-![demo-6](/images/3-Project-source-code/3.2-download-front-end/demo-6.png)
-![demo-7](/images/3-Project-source-code/3.2-download-front-end/demo-7.png)
-After uploading chunks, the server will merge chunks into original video file, then run FFMPEG command to generate HLS master playlist (which contains several folder with `.ts` file contain video sequence and `.m3u8` contain metadata for video sequence order)
+The server will start uploading chunks, then merge chunks into original video file, and finally run FFMPEG command to generate HLS master playlist (which contains several folder with `.ts` file contain video sequence and `.m3u8` contain metadata for video sequence order)
 ![demo-8](/images/3-Project-source-code/3.2-download-front-end/demo-8.png)
 The uploaded video original file saved in `uploads` folder
 ![demo-8A](/images/3-Project-source-code/3.2-download-front-end/demo-8A.png)

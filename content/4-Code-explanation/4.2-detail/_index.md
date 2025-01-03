@@ -358,7 +358,7 @@ export class AWSS3FileReadStream extends Readable {
 
 ## Class AWSS3CustomStorageEngine
 Extending `multer.storageEngine` and implementing 2 method `_handleFile` and `_removeFile`:
-- `_handleFile`: initialize multipart upload with `CreateMultipartUploadCommand` command, getting read stream from the uploaded file (`file.stream`) and read all file data into a buffer, then splice buffer into multiple of 6MiB chunks and upload to AWS one-by-one, calling the `UploadPartCommand` command; after finishing, call the `CompleteMultipartUploadCommand` to finalize uploading process.
+- `_handleFile`: initialize multipart upload with `CreateMultipartUploadCommand` command, getting read stream from the uploaded file (`file.stream`) and read all file data into a buffer, then splice buffer into multiple of 5MiB chunks and upload to AWS one-by-one, calling the `UploadPartCommand` command; after finishing, call the `CompleteMultipartUploadCommand` to finalize uploading process.
 - `_removeFile`: call `DeleteObjectCommand` to remove file in case of upload failure.
 
 ```js
@@ -394,7 +394,7 @@ interface CustomFileResult extends Partial<Express.Multer.File> {
     name: string;
 }
 
-export const multipartUploadPartSize = 6 * 1024 * 1024;
+export const multipartUploadPartSize = 5 * 1024 * 1024; // AWS UploadPartCommand set lower-bound size = 5MB (if the total file size > 5MB)
 
 export class AWSS3CustomStorageEngine implements multer.StorageEngine {
     private nameFn: nameFnType;
@@ -433,11 +433,11 @@ export class AWSS3CustomStorageEngine implements multer.StorageEngine {
             chunkReadStream.on('end', async () => {
                 fileSize = tmpBuffer.byteLength;
                 try {
+                    console.log("******************************************************************************\n\nUpload chunk to server finish, start writing chunk to S3")
                     while (tmpBuffer.byteLength > 0) {
                         const cutBuffer = tmpBuffer.subarray(0, multipartUploadPartSize);
                         tmpBuffer = tmpBuffer.subarray(multipartUploadPartSize);
                         let partNumber = partNumberCnt + 1;
-                        console.log('Reading buffer length:', cutBuffer.byteLength);
                         const uploadResult = await s3.send(new UploadPartCommand({
                             Bucket: jsonSecret.BUCKET_NAME ? jsonSecret.BUCKET_NAME : "",
                             Key: chunkS3Path,
@@ -445,16 +445,14 @@ export class AWSS3CustomStorageEngine implements multer.StorageEngine {
                             Body: cutBuffer,
                             PartNumber: partNumber
                         }))
-                        console.log("Part", partNumber, "uploaded");
+                        console.log("Part", partNumber, " of the chunk, size: ", cutBuffer.length / (1024 * 1024), " MiB uploaded\n\n******************************************************************************");
                         uploadResults.push(uploadResult);
-                        console.log('Reading tmpBuffer done length:', tmpBuffer.byteLength);
                         partNumberCnt += 1;
                     }
                 } catch (error) {
                     console.error('UploadPartCommand error:', error);
                 }
 
-                console.log('Prepare complete upload command');
                 try {
                     const res = await s3.send(
                         new CompleteMultipartUploadCommand({
@@ -504,5 +502,139 @@ export class AWSS3CustomStorageEngine implements multer.StorageEngine {
         })
         await s3.send(deleteCommand);
     }
+}
+```
+
+## Upload Chunk API
+```js
+/**
+ * This is run right after Multer process upcoming chunk and store into tmp directory
+ * @param req 
+ * @param res 
+ */
+export const uploadChunk = async (req, res) => {
+    try {
+        if (req.file) {
+            const dbModule = await import('service/database/lowdb');
+            const db: Low<{}> = await dbModule.default;
+            /**
+             * Multer check and saved chunk successfully
+             */
+            const baseFileName = req.file.originalname.replace(/\s+/g, '');
+            /**
+             * Filename: ex-machima.part_1
+             * 
+             * -> filename: ex-machima
+             * -> part: 1
+             */
+            const fileName: string = FilenameUtils.getBaseName(baseFileName);
+            const partNo: number = FilenameUtils.getPartNumber(baseFileName);
+            if (!db.data[fileName]) {
+                throw `Server not recognize chunk\'s video filename ${fileName}`;
+            } else if (typeof partNo !== 'number') {
+                throw 'File chunk must contain part number, must be <movie-name>.part_<no>!';
+            } else if (partNo >= db.data[fileName].length) {
+                throw `PartNo out of range for filename ${fileName}`;
+            } else {
+                /**
+                 * Check is last chunk
+                 */
+                await db.update((data) => data[fileName][partNo] = true);
+                const uploadChunksState = db.data[fileName];
+                const isFinish = (uploadChunksState.length > 0) && (uploadChunksState.filter((chunkState: boolean) => chunkState == false).length == 0);
+                if (isFinish) {
+                    /**
+                     * True code
+                     */
+                    await UploadUtils.mergeChunks(db, fileName, undefined);
+                    VideoProcessUtils.generateMasterPlaylist(fileName);
+                    /**
+                     * Mock test response failed on last part to test cancelling upload
+                     */
+                    // throw 'Upload part error';
+                }
+
+                res.send({
+                    partNo: partNo,
+                    fileName: fileName,
+                    success: true,
+                })
+            }
+        } else {
+            throw 'Multer did not accept chunk!';
+        }
+    } catch (error) {
+        console.error('uploadChunk error:', error);
+        res.status(400).send({ error, success: false });
+    }
+}
+```
+
+## Merge chunks using custom read/write stream
+```js
+import { Low } from 'lowdb/lib';
+import path from 'path';
+import { fileSystemActionObject, fileSystemPathObject } from 'initFs';
+
+export class UploadUtils {
+    public static async mergeChunks(db: Low<{}>, fileName: string, chunkSum: number | undefined): Promise<void> {
+        const MAX_RETRIES = 5;
+        const RETRY_DELAY = 1000; // 1 second
+        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        /**
+         * Open file stream, adding chunks into file by command:
+         * chunkStream.pipe(writeStream, {end: false})
+         */
+
+        const finalFilePath = fileSystemPathObject.uploadVideoFilePath(fileName);
+        const writeStream = fileSystemActionObject.createWriteStream(finalFilePath, { highWaterMark: 5 * 1024 * 1024 }); // 5MiB buffer
+        const uploadChunksState = db.data[fileName];
+        const totalPart = chunkSum ?? uploadChunksState.length;
+        for (let i = 0; i < totalPart; i++) {
+            const chunkName = `${fileName}.part_${i}`;
+            console.log('chunkName', chunkName);
+            let retries = 0;
+            while (retries < MAX_RETRIES) {
+                try {
+                    const chunkPath = fileSystemPathObject.uploadChunkFilePath(chunkName);
+                    const readStream = fileSystemActionObject.createReadStream(chunkPath, { highWaterMark: 512 * 1024 }); // 512 KiB each read
+                    await new Promise<void>((resolve, reject) => {
+                        fileSystemActionObject.addEventListenerReadStream(readStream, 'end', () => {
+                            console.log('Readstream part ', i, ' end');
+                            fileSystemActionObject.rmFile(chunkPath);
+                            resolve();
+                        });
+                        fileSystemActionObject.addEventListenerReadStream(readStream, 'error', (err) => {
+                            console.error(`Error reading chunk ${chunkName}:`, err);
+                            reject(err);
+                        });
+                        try {
+                            fileSystemActionObject.pipeReadToWrite(readStream, writeStream, { end: false });
+                        } catch (error) {
+                            console.error('Piping read stream to write stream error', error);
+                        }
+                    });
+                    break;
+                } catch (error) {
+                    console.error(`Failed at ${retries} effort for ${chunkName}. Retrying...`);
+                    retries += 1;
+                    if (retries < MAX_RETRIES) {
+                        await delay(RETRY_DELAY);
+                    } else {
+                        console.error(`Failed to process chunk ${chunkName} after ${retries} retries.`);
+                    }
+                }
+            }
+        }
+        await new Promise<void>((resolve, reject) => {
+            fileSystemActionObject.addEventListenerWriteStream(writeStream, 'finish', () => {
+                console.log('_final has finish with callback() called');
+                resolve();
+            });
+            writeStream.end(); // Write stream end to trigger _final handler
+        });
+    }
+
+    ...
 }
 ```

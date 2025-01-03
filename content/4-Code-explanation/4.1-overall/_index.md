@@ -60,6 +60,6 @@ for (let chunkIdx = 0; chunkIdx < chunkNums; chunkIdx += 1) {
 ```
 To easily switch back and forth between using local file system and AWS S3 bucket, a custom write stream and read stream were implemented, inherited from `Writable` and `Readable` class from `node:stream`.
 {{% notice note %}}
-Sidenote: The solution of using s3fs-fuse mounted storage was founded after I implement these custom stream. The stream classes work as expected so I keep them. For the later step of using FFMPEG to generate HLS playlist, I happily ultilized s3fs for an easier transition to AWS S3.
+Sidenote: The solution of using s3fs-fuse mounted storage was found after I implemented these custom stream. The stream classes work as expected so I kept them. For the later step of FFMPEG HLS playlist generation, I ultilized s3fs for an easier transition to AWS S3.
 {{% /notice %}}
 ![stream](/images/3-Project-source-code/3.3-code-explanation/stream.png)
