@@ -7,9 +7,9 @@ pre : " <b> 1. </b> "
 ---
 
 ## Goal
-This workshop will provide you a step-by-step guide for deploy an Express JS web application that allows users to upload video file and stream using HTTP Live Streaming (HLS) protocol. 
+This workshop will provide you a step-by-step guide for deploy an Express JS web application supports uploading video and streaming using HTTP Live Streaming (HLS) protocol. 
 
-The project allows storing on local file storage or on AWS S3 Bucket.
+The project supports storing on local file storage or on AWS S3 Bucket.
 
 ### Content
   - [Related concepts](1.1-concepts/)
